@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Application" type="GroovyScriptRunConfiguration" factoryName="Groovy" singleton="false">
+    <module name="" />
+    <setting name="path" value="file://$PROJECT_DIR$/src/main/groovy/info/hubbitus/Application.groovy" />
+    <setting name="vmparams" value="" />
+    <setting name="params" value="@test.args" />
+    <setting name="workDir" value="file://$PROJECT_DIR$" />
+    <setting name="debug" value="false" />
+    <method />
+  </configuration>
+</component>
