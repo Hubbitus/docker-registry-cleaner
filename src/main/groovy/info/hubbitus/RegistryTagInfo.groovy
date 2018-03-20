@@ -30,6 +30,12 @@ class RegistryTagInfo {
 	@JsonIgnore
 	Map<RegistryClient.ApiSchemaVersion,?> serviceRawInfo = [:]
 
+	/**
+	 * Empty constractor required for JSON [de]serealization
+	 * It private and should not be used manually
+	 */
+	private RegistryTagInfo() { }
+
 	RegistryTagInfo(String application, String name, RegistryClient.ApiSchemaVersion schemaVersion, rawServiceAnswer) {
 		this.application = application
 		this.name = name

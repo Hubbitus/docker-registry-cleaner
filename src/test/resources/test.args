@@ -1,0 +1,9 @@
+--format=Tag=[<% printf("%-" + (tag.application.length() + 1 + tags.max{ it.name.length()}.name.length()) + "s", "${tag.application}:${tag.name}")%>]; time=[${tag.created}]; isForDelete=[<%printf("%-5s", tag.keptBy.isForDelete())%>]; [${tag.keptBy}]
+--registry-url=https://docreg.taskdata.work/v2/
+--login=egais
+--password=super-password
+--only-applications=^(art|bp-app)$
+#--keep=GLOBAL="{ tag: '^(tag|release).+$', top: 5, period: 1w }"
+--keep=GLOBAL={ top: 5, period: 1w }
+--keep=egaisapp=[ { tag: ".+", top: 10, period: 3d }, { tag: "release_.+", top: 4 }, {tag: "auto.+", period: "4d"} ]
+--keep=bp-app=[ { tag: "^(dev|master)$", top: 2 }, { tag: "^dev-", top: 5 }, {tag: "^master-", period: "4d"} ]

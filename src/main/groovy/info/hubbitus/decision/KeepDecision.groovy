@@ -32,7 +32,7 @@ class KeepDecision {
 			this.keepByTop = keepByTop
 		}
 		if(null != keepByPeriod){
-			this.keepByPeriod == keepByPeriod
+			this.keepByPeriod = keepByPeriod
 		}
 	}
 

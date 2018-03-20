@@ -1,9 +1,8 @@
 package info.hubbitus
 
+import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Specification
-
-import java.time.ZonedDateTime
 
 import static info.hubbitus.TestConfig.*
 
@@ -15,50 +14,43 @@ import static info.hubbitus.TestConfig.*
  * @author Pavel Alexeev.
  * @since 2017-09-17 21:22.
  */
+@Ignore('This is real integration test and require ENV variables with user/pass to access to registry. See RegistryCleanerTest to test including client with mocks')
 class RegistryClientTest extends Specification {
-    @Shared RegistryClient client = new RegistryClient(REPO_URL, REPO_LOGIN, REPO_PASSWORD)
+	@Shared RegistryClient client = new RegistryClient(REPO_URL, REPO_LOGIN, REPO_PASSWORD)
 
-    static final String APP_NAME = 'egaisapp'
+	static final String APP_NAME = 'egaisapp'
 
-    def "test getCatalog"() {
-        when:
-            List<String> apps = client.getCatalog()
-        then:
-            apps
-            apps.size() > 1
-            apps.find{APP_NAME}
-    }
+	def "getCatalog"() {
+		when:
+			List<String> apps = client.getCatalog()
+		then:
+			apps
+			apps.size() > 1
+			apps.find{APP_NAME}
+	}
 
-    def "test getTags"() {
-        when:
-            List<String> tags = client.getTags(APP_NAME)
-        then:
-            tags
-            tags.size() > 1
-    }
+	def "getTags"() {
+		when:
+			List<String> tags = client.getTags(APP_NAME)
+		then:
+			tags
+			tags.size() > 1
+	}
 
-    def "test getTagInfo [#tag]"() {
-        when:
-            RegistryTagInfo tagInfo = client.getTagInfo(APP_NAME, tag)
-        then:
-            tagInfo
-        where:
-            tag << client.getTags(APP_NAME).take(10)
-    }
+	def "getTagInfo [#tag]"() {
+		when:
+			RegistryTagInfo tagInfo = client.getTagInfo(APP_NAME, tag)
+		then:
+			tagInfo
+		where:
+			tag << client.getTags(APP_NAME).take(10)
+	}
 
-    def "test getApplicationWithTagDetails"() {
-        when:
-            Map ret = client.getApplicationTagsDetails(APP_NAME)
-        then:
-            ret
-            ret.size() > 1
-    }
-
-    def "test getTagsWithBuildDates"() {
-        when:
-            Map<String, ZonedDateTime> res = client.getTagsWithBuildDates(APP_NAME)
-        then:
-            res
-            res.size() > 1
-    }
+	def "getApplicationWithTagDetails"() {
+		when:
+			List<RegistryTagInfo> ret = client.getApplicationTagsDetails(APP_NAME)
+		then:
+			ret
+			ret.size() > 1
+	}
 }

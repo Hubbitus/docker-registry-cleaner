@@ -2,6 +2,7 @@ package info.hubbitus.cli
 
 import com.beust.jcommander.DynamicParameter
 import com.beust.jcommander.Parameter
+import com.beust.jcommander.ParameterException
 import com.beust.jcommander.Parameters
 import groovy.transform.Memoized
 
@@ -18,14 +19,28 @@ class CliOptions {
 	String registryURL
 	@Parameter(names = ['-l', '--login'], description = 'Docker registry login', required = true)
 	String login
-	@Parameter(names = ['-p', '--password'], description = 'Docker registry password', required = true, password = true)
+	@Parameter(names = ['-p', '--password'], description = 'Docker registry password', required = false, password = true)
 	String password
+
+	@Parameter(names = ['-P', '--password-file'], description = 'Docker registry password, stored in file for security.', required = false)
+	String passwordFile
+
+	/**
+	 * We get password directly provided fi present, or readcontent of file
+	 * @return
+	 */
+	String getPassword(){
+		password ?: new File(passwordFile).text
+	}
 
 	@Parameter(names = ['-o', '--only-applications'], description = 'Regexp to match against applications name to process. Tags for other even will not be fetched')
 	String onlyApplications
 
+	@Parameter(names = ['-D', '--debug'], description = 'Debug mode - write JSON data for got tags into debug.json file')
+   boolean debug = false
+
 //    @Parameter(names = ['-v', '--verbose'], description = 'More verbosity')
-//    boolean verbose = false;
+//    boolean verbose = false
 
 //        * Exclude items match to `alwaysKeep` (whitelist)
 //    @Parameter(names = ['-c', '--clean'], description = """List of rules to clean! F.e.: --clean='[application=/egaisapp/, tagRegexp=/tmp.*/, keepTop=10, keepPeriod='7d', alwaysKeep=/^(tagRegexp|release)_\\\\d\\\\.\\\\d\$/]'
@@ -97,5 +112,14 @@ class CliOptions {
 		else{
 			return keeps.GLOBAL
 		}
+	}
+
+	/**
+	 * After parse all values we also want postValidate some complex conditions like dependent values. F.e. if one of tywo options must be filled. So we can't there just mark any of them as required.
+	 */
+	void postValidate(){
+//		if (!password && !passwordFile){
+//			throw new ParameterException('You must provide neither `--password` or `--password-file` option to be able ')
+//		}
 	}
 }

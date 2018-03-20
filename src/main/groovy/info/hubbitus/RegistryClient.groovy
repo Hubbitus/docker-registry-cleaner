@@ -119,8 +119,7 @@ class RegistryClient {
 		GParsPool.withPool(CONCURRENT_REST_CALLS) {
 			List<String> tags = getTags(application)
 			ProgressLogger pl = new ProgressLogger(tags, log.&info, application)
-//?            return optionsByTag.collectParallel { tagRegexp ->
-			return tags.collect { tag ->
+			return tags.collectParallel { tag ->
 				pl.next{
 					try{
 						getTagInfo(application, tag)

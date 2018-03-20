@@ -9,6 +9,12 @@ import info.hubbitus.cli.JCommanderAutoWidth
 import info.hubbitus.cli.KeepOption
 import info.hubbitus.cli.KeepOption.KeepTagOption
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.util.ISO8601DateFormat
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+
+import java.time.Clock
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
@@ -18,23 +24,25 @@ import java.time.temporal.ChronoUnit
  */
 @Slf4j
 class RegistryCleaner {
+	/**
+	 * Amount of concurrent threads for request remote data from registry and process it
+	 */
 	private final static int CONCURRENT_APPLICATION_PROCESSING = 5
 
-	final RegistryClient client;
+	private RegistryClient client
 
-	final private CliOptions options;
+	final private CliOptions options
 
 	RegistryCleaner(String[] args) {
 		options = new CliOptions()
 		JCommanderAutoWidth jCommander = new JCommanderAutoWidth(options, args)
 		if (options.help) {
-			jCommander.usage();
+			jCommander.usage()
 			return;
 		}
+		options.postValidate()
 
-		client = new RegistryClient(options.registryURL, options.login, options.password);
-
-		clean()
+		client = new RegistryClient(options.registryURL, options.login, options.password)
 	}
 
 	/**
@@ -70,17 +78,56 @@ class RegistryCleaner {
 		}
 	}
 
-	private Map<String, List<RegistryTagInfo>> prepareListOfTagsToClean(){
+	@Lazy
+	ObjectMapper jsonMapper = {
+		def mapper = new ObjectMapper()
+		mapper.enable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+		mapper.registerModule(new JavaTimeModule())
+		mapper.setDateFormat(new ISO8601DateFormat())
+		mapper
+	}()
+
+	/**
+	 * Write Json data for coming service answers for debug and test purposes
+	 *
+	 * @param data
+	 * @param filename
+	 * @return
+	 */
+	private writeDebugJson(data, String filename = 'debug.json'){
+		if (options.debug){
+			jsonMapper.writerWithDefaultPrettyPrinter().writeValue(new File(filename), data)
+		}
+	}
+
+	/**
+	 * Get Tags information for each application provided in option --only-application
+	 *
+	 * @return Map [AppName:List<RegistryTagInfo>]
+	 */
+	Map<String, List<RegistryTagInfo>> getTagsDetailsByApplications(){
 		GParsPool.withPool(CONCURRENT_APPLICATION_PROCESSING) {
-//?            def ret = client.getCatalog()?.collectParallel {app->
-			def ret = client.getCatalog()?.findAll{app->
-					app ==~ options.onlyApplications
-				}?.collect { app->
-					[ (app): markTagsForDeletion(client.getApplicationTagsDetails(app)) ]
-				}?.sum() // Unfortunately GPars have no method like CollectEntriesParallel
+			def ret = client.getCatalog()?.findAll {String app->
+				app ==~ options.onlyApplications
+			}?.collectParallel {String app->
+				[ (app): client.getApplicationTagsDetails(app) ]
+			}?.sum() // Unfortunately GPars have no method like CollectEntriesParallel
+
+			writeDebugJson(ret)
 
 			return ret
 		} as Map<String, List<RegistryTagInfo>>
+	}
+
+	/**
+	 * Mark tags for deletion by setting for each appropriate keepByTop/keepByPeriod reason
+	 *
+	 * @return
+	 */
+	private Map<String, List<RegistryTagInfo>> prepareListOfTagsToClean(){
+		getTagsDetailsByApplications()?.each {app, List<RegistryTagInfo> tags ->
+			markTagsForDeletion(tags)
+		}
 	}
 
 	/**
@@ -110,13 +157,6 @@ class RegistryCleaner {
 			}
 		}
 
-		// Temporary serialization for test data
-//		def mapper = new ObjectMapper()
-//		mapper.enable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-//		mapper.registerModule(new JavaTimeModule())
-//		mapper.setDateFormat(new ISO8601DateFormat())
-//		String s = mapper.writeValueAsString(tags)
-
 		// 2: Process Top and Period limits
 		tagsByRegexps.each {KeepTagOption opt, List<RegistryTagInfo> ts->
 			if (opt.top) {
@@ -127,14 +167,28 @@ class RegistryCleaner {
 			}
 
 			if (opt.period){
-				ts.findAll{RegistryTagInfo tag->
-					ZonedDateTime.now().until(tag.created, ChronoUnit.SECONDS) < opt.period
-				}.each {RegistryTagInfo tag->
-					tag.keptBy.keepByPeriod(opt)
+				ts.each{RegistryTagInfo tag->
+					Long timeDiffSeconds = tag.created.until(now(), ChronoUnit.SECONDS)
+					if(timeDiffSeconds > 0 && timeDiffSeconds < opt.period){ // because until also return negative values if build time in the future (f.e. testing case)
+						tag.keptBy.keepByPeriod(opt)
+					}
 				}
 			}
 		}
 
 		tags
+	}
+
+	/**
+	 * To exactly known what clock used and allow override it in test
+	 */
+	private static Clock clock = Clock.systemDefaultZone()
+
+	/**
+	 * Introduce separate method for easy test results of keep
+	 */
+	static ZonedDateTime now(){
+//		ZonedDateTime.now(clock)
+		ZonedDateTime.parse('2018-03-02T23:24:25+03:00[Europe/Moscow]')
 	}
 }

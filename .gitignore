@@ -2,3 +2,7 @@
 /build/
 /out/
 /test.args
+
+/.idea
+
+/.registry.pass

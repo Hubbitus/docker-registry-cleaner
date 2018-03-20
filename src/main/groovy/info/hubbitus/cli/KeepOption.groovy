@@ -1,5 +1,6 @@
 package info.hubbitus.cli
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import groovy.json.JsonParserType
 import groovy.json.JsonSlurper
 import groovy.transform.AutoClone
@@ -22,6 +23,7 @@ class KeepOption {
 
 	@ToString(cache = true, includeNames = true, ignoreNulls = true, includePackage = false) // , excludes = 'parent'
 	static class KeepTagOption {
+		@JsonIgnore
 		KeepOption parent
 		/**
 		 * Tag of application. Regexp.
@@ -37,6 +39,15 @@ class KeepOption {
 		 * @see #setPeriod(java.lang.String)
 		 */
 		Long period
+
+		/**
+		 * Primary for debug
+		 */
+		String periodStr
+
+		void setPeriodStr(String value){
+			setPeriod(value)
+		}
 
 		/**
 		 * Private constructor.
@@ -56,6 +67,7 @@ class KeepOption {
 		}
 
 		private void setPeriod(String str){
+			periodStr = str
 			if (str){
 				int multiplier = 1
 				switch (str[-1]){

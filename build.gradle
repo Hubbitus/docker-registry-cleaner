@@ -26,9 +26,14 @@ dependencies {
 	compile 'info.hubbitus:Hubbitus-common:[1.2.1,)' // ProgressiveLogging
 
 	testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
+	// Mock: http://spockframework.org/spock/docs/1.1-SNAPSHOT/all_in_one.html#_mocking_classes
+	testCompile 'cglib:cglib-nodep:3.2.6+'
+	testCompile 'org.objenesis:objenesis:2.6+'
+	testCompile 'org.springframework.boot:spring-boot-test:2.0.0.RELEASE+' // http://mrhaki.blogspot.ru/2015/02/spocklight-capture-and-assert-system.html
+
 
 	ext.jacksonVersion = '2.8.10'
-	// JSON
+	// JSON for store test data
 	compile "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}", // Apache License, v.2.0 (LGPL 2.1 other module jackson-core-lgpl)
 		"com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}",
 		"com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:${jacksonVersion}", // Apache License, v.2.0 (LGPL 2.1 other module jackson-core-lgpl)
