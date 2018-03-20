@@ -1,0 +1,8 @@
+# https://docs.travis-ci.com/user/languages/groovy/
+language: groovy
+jdk:
+  - openjdk7
+  - openjdk8
+  - openjdk9
+
+script: ./gradlew check --rerun-tasks
