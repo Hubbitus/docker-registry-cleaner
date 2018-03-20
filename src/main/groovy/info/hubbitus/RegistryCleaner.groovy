@@ -38,7 +38,7 @@ class RegistryCleaner {
 		JCommanderAutoWidth jCommander = new JCommanderAutoWidth(options, args)
 		if (options.help) {
 			jCommander.usage()
-			return;
+			return
 		}
 		options.postValidate()
 
@@ -49,15 +49,17 @@ class RegistryCleaner {
 	 * Main clean logic
 	 */
 	void clean() {
-		Map<String, List<RegistryTagInfo>> tagList = prepareListOfTagsToClean()
+		if (!options.help) {
+			Map<String, List<RegistryTagInfo>> tagList = prepareListOfTagsToClean()
 
-//??            if (!options.delete){
-//                toDel.each{app->
-//                    app.
-//                }
-//            }
+	//??            if (!options.delete){
+	//                toDel.each{app->
+	//                    app.
+	//                }
+	//            }
 
-		printListTags(tagList)
+			printListTags(tagList)
+		}
 	}
 
 	/**
