@@ -1,6 +1,7 @@
 [![CI Build Status](https://travis-ci.org/Hubbitus/docker-registry-cleaner.svg?branch=master)](https://travis-ci.org/Hubbitus/docker-registry-cleaner)
 
 # Base usage info
+```
 $ java -jar docker-registry-cleaner-all-0.1-SNAPSHOT.jar --help
 Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true -Dsun.java2d.pmoffscreen=false -XX:+UseCompressedOops -XX:+DoEscapeAnalysis -XX:+AggressiveOpts -XX:+EliminateLocks -XX:+UseNUMA -XX:+TieredCompilation
 Usage: <main class> [options]
@@ -29,3 +30,4 @@ Usage: <main class> [options]
     --sort
       Sort method on tags list. Either "name" or "time" (build time of image, default)
       Default: time
+```
