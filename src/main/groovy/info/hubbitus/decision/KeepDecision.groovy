@@ -46,8 +46,8 @@ class KeepDecision {
 
 	/**
 	 * Summary by all decisions about tags:
-	 * - if at least one have
 	 *
+	 * @See logic description in {@see CliOptions#keep}
 	 * @return
 	 */
 	boolean isForDelete(){
@@ -55,10 +55,6 @@ class KeepDecision {
 
 		assert keepTagOption.top || keepTagOption.period
 
-		!(
-			( keepTagOption.top && keepTagOption.period && keepByTop && keepByPeriod ) ||
-				( keepTagOption.top && keepByTop) ||
-				( keepTagOption.period && keepByPeriod )
-		)
+		!(keepByTop || keepByPeriod)
 	}
 }

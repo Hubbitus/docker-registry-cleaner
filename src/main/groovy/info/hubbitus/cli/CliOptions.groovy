@@ -5,11 +5,13 @@ import com.beust.jcommander.Parameter
 import com.beust.jcommander.ParameterException
 import com.beust.jcommander.Parameters
 import groovy.transform.Memoized
+import groovy.util.logging.Slf4j
 
 /**
  * @author Pavel Alexeev.
  * @since 2017-09-16 15:47.
  */
+@Slf4j
 @Parameters(separators='=')
 class CliOptions {
 	@Parameter
@@ -26,7 +28,7 @@ class CliOptions {
 	String passwordFile
 
 	/**
-	 * We get password directly provided fi present, or readcontent of file
+	 * We get {@see password} directly if present, or read content of file from {@see passwordFile}
 	 * @return
 	 */
 	String getPassword(){
@@ -37,34 +39,35 @@ class CliOptions {
 	String onlyApplications
 
 	@Parameter(names = ['-D', '--debug'], description = 'Debug mode - write JSON data for got tags into debug.json file')
-   boolean debug = false
+	boolean debug = false
 
-//    @Parameter(names = ['-v', '--verbose'], description = 'More verbosity')
-//    boolean verbose = false
-
-//        * Exclude items match to `alwaysKeep` (whitelist)
-//    @Parameter(names = ['-c', '--clean'], description = """List of rules to clean! F.e.: --clean='[application=/egaisapp/, tagRegexp=/tmp.*/, keepTop=10, keepPeriod='7d', alwaysKeep=/^(tagRegexp|release)_\\\\d\\\\.\\\\d\$/]'
-//    It has next logic:
-//        * Firstly match "application" against `application` regexp
-//        * Then "tagRegexp" against `tagRegexp` regexp
-//        * If `keepPeriod` present and greater than 0 check it matches build time early then in `keepPeriod` (which is by default number of seconds, but suffixes m, h, d, w also supported for minutes, hours, days and weeks)
-//        * If `keepTop` present and greater than 0, from above results exempt from deletion that amount of elements, according to sorting, provided in --sort
-//          If both `keepPeriod` and `keepTop` provided only tags *match both criteria* will be kept! F.e.:
-//            - Said by date matched 10 tags and you have top=5 - so only 5 will be kept - other deleted
-//            - In configured date period was 10 tags and you set top=20 - only 10 will be kept - other deleted
-//        All other will be deleted!
-//        If tagRegexp match to the more than one --clean rule, first found used
-//    Please be careful with spaces and quotes. Expression parsed by ConfigSlurper"""
-//        , converter = CleanOptionConverter.class, splitter = CleanOptionConverter.NopSplitter.class
-//    )
-//    List<KeepOption> cleans
+	@Parameter(names = ['-i', '--interactive'], description = 'Interactive mode. Ask for deletion each image. Details like data and why it is proposed for delete will be shown. Implies delete = true')
+	boolean interactive = false
 
 	/**
-	 * For now converters does not implemented for @DynamicParameter
+	 * For now converters does not implemented for {@see com.beust.jcommander.DynamicParameter}:
 	 * @issue https://github.com/cbeust/jcommander/issues/400
 	 * @see #getKeeps()
 	 */
-	@DynamicParameter(names = '--keep', description = 'Dynamic parameters go here', required = true)
+	@DynamicParameter(names = '--keep', required = true, description = '''
+As primary goal to delete some old images we just provide some opposite rules which must be kept.
+1) We process only applications, matches --only-applications pattern if it set.
+2) Firstly match "application" against `application` regexp
+3) Then `tag` name against `tag` regexp
+4) If `period` present and greater than 0 check it matches build time early then in `period` (which is by default number of seconds, but suffixes m, h, d, w also supported for minutes, hours, days and weeks)
+5) If `top` present and greater than 0, from above results exempt from deletion that amount of elements, according to sorting, provided in --sort
+6) If both `period` and `top` provided only tags *match both criteria* will be kept (boolean AND)! F.e.:
+ - Said by date matched 10 tags and you have top=5 - so only 5 will be kept - other deleted
+ - In configured date period was 10 tags and you set top=20 - only 10 will be kept - other deleted
+
+All other will be deleted!
+
+Example of options (to provide in file, please quote properly in shell options):
+--keep=GLOBAL={ top: 5, period: 1w }
+--keep=egaisapp=[ { tag: ".+", top: 10, period: 3d }, { tag: "release_.+", top: 4 }, {tag: "auto.+", period: "4d"} ]
+--keep=bp-app=[ { tag: "^(dev|master)$", top: 2 }, { tag: "^dev-", top: 5 }, {tag: "^master-", period: "4d"} ]
+--keep=glrapp={ top: 4 }
+''')
 	private Map<String,String> _keeps = [:];
 
 	/**
@@ -81,11 +84,7 @@ class CliOptions {
 		}
 	}
 
-//	--always-keep='^(dir/application:some-tag1|application1:some-tag2)$'
-//	@Parameter(names = '--always-keep', description = 'Regexp of match against "application:tagRegexp" which must be kept always! Some sort of important guard to do not hard deal with exclusions in --keep* options')
-//	String alwaysKeep
-
-	@Parameter(names = '--sort', description = 'Sort method on optionsByTag list. Either "name" or "time" (build time of image, default)', validateWith = SortOptionValidator.class)
+	@Parameter(names = '--sort', description = 'Sort method on optionsByTag list. Either "name" or "time" (build time of image, default). In case of time sorting most recent should be stay, so DESC assuming', validateWith = SortOptionValidator.class)
 	String sort = 'time'
 
 	@Parameter(names = ['-f', '--format'], description = 'Format of printing tagRegexp line. See SimpleTemplateEngine description and info.hubbitus.RegistryTagInfo class for available data', validateWith = SimpleTemplateEngineFormatValidator.class)
@@ -118,8 +117,9 @@ class CliOptions {
 	 * After parse all values we also want postValidate some complex conditions like dependent values. F.e. if one of tywo options must be filled. So we can't there just mark any of them as required.
 	 */
 	void postValidate(){
-//		if (!password && !passwordFile){
-//			throw new ParameterException('You must provide neither `--password` or `--password-file` option to be able ')
-//		}
+		if (interactive && !delete){
+			log.warn("interactive option provided, delete=true also implied!")
+			delete = true
+		}
 	}
 }

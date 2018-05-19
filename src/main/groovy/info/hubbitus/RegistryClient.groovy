@@ -21,7 +21,7 @@ class RegistryClient {
 	String user;
 	String password;
 
-	private final static int CONCURRENT_REST_CALLS = 20
+	private final static int CONCURRENT_REST_CALLS = 10
 
 	/**
 	 * Api schema media types
@@ -102,7 +102,8 @@ class RegistryClient {
 	RegistryTagInfo getTagInfo(String application, String tag, ApiSchemaVersion schemaVersion = ApiSchemaVersion.V1){
 		def resp = getRESTClient().get(
 			path: "$application/manifests/$tag"
-			,headers: [Accept: schemaVersion.getAcceptHeader()] // Header required: https://stackoverflow.com/questions/37033055/how-can-i-use-the-docker-registry-api-v2-to-delete-an-image-from-a-private-regis/37040883#37040883
+			// Header required: https://stackoverflow.com/questions/37033055/how-can-i-use-the-docker-registry-api-v2-to-delete-an-image-from-a-private-regis/37040883#37040883
+			,headers: [Accept: schemaVersion.getAcceptHeader()]
 		)
 
 		return new RegistryTagInfo(application, tag, schemaVersion, resp)
@@ -139,12 +140,12 @@ class RegistryClient {
 	 *
 	 * Unfortunately on deletion we MUST re-request tagRegexp info to get correct SHA256 hash. {@see ApiSchemaVersion}
 	 *
-	 * @param application
-	 * @param tagRegexp
+	 * @param tag
 	 * @return
 	 */
-//?    def deleteTag(String application, String tagRegexp){
-//        RegistryTagInfo tagInfo = getTagInfo(application, tagRegexp, ApiSchemaVersion.V2)
-//        return getRESTClient().delete(path: "$application/manifests/${tagInfo.responseBase.headergroup.getHeaders('Docker-Content-Digest')[0].getValue()}")
-//    }
+	def deleteTag(RegistryTagInfo tag){
+		RegistryTagInfo tagInfoV2 = getTagInfo(tag.application, tag.name, ApiSchemaVersion.V2)
+		getRESTClient().delete(path: "${tag.application}/manifests/${tagInfoV2.serviceRawInfo[ApiSchemaVersion.V2].responseBase.headergroup.getHeaders('Docker-Content-Digest')[0].getValue()}")
+		log.info("Tag [$tag] deleted!")
+	}
 }

@@ -31,7 +31,7 @@ class RegistryTagInfo {
 	Map<RegistryClient.ApiSchemaVersion,?> serviceRawInfo = [:]
 
 	/**
-	 * Empty constractor required for JSON [de]serealization
+	 * Empty constructor required for JSON [de]serialization
 	 * It private and should not be used manually
 	 */
 	private RegistryTagInfo() { }

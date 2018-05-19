@@ -1,18 +1,19 @@
 package info.hubbitus
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.util.ISO8601DateFormat
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import groovy.text.SimpleTemplateEngine
 import groovy.text.Template
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 import groovy.util.logging.Slf4j
 import groovyx.gpars.GParsPool
 import info.hubbitus.cli.CliOptions
 import info.hubbitus.cli.JCommanderAutoWidth
 import info.hubbitus.cli.KeepOption
 import info.hubbitus.cli.KeepOption.KeepTagOption
-
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.databind.util.ISO8601DateFormat
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 
 import java.time.Clock
 import java.time.ZonedDateTime
@@ -33,6 +34,9 @@ class RegistryCleaner {
 
 	final private CliOptions options
 
+	@Lazy
+	private Template tpl = {new SimpleTemplateEngine().createTemplate(options.format)}()
+
 	RegistryCleaner(String[] args) {
 		options = new CliOptions()
 		JCommanderAutoWidth jCommander = new JCommanderAutoWidth(options, args)
@@ -50,15 +54,32 @@ class RegistryCleaner {
 	 */
 	void clean() {
 		if (!options.help) {
-			Map<String, List<RegistryTagInfo>> tagList = prepareListOfTagsToClean()
+			Map<String, List<RegistryTagInfo>> tagsByApp = prepareListOfTagsToClean()
 
-	//??            if (!options.delete){
-	//                toDel.each{app->
-	//                    app.
-	//                }
-	//            }
+			printListTags(tagsByApp)
 
-			printListTags(tagList)
+			log.info('Start actual deleting of tags as requested')
+
+			if (options.delete){
+				iterateOnTagsByApp(tagsByApp){tag, tags->
+					if (tag.keptBy.isForDelete()){
+						if(options.interactive){
+							println tpl.make(tag: tag, tags: tags)
+							println 'Delete above tag? Y/n'
+							if(System.in.newReader().readLine().trim().toLowerCase() in ['y', '']){
+								client.deleteTag(tag)
+							}
+							else {
+								log.debug('Skipping tag deletion by user choose')
+							}
+						}
+						else {
+							client.deleteTag(tag)
+						}
+					}
+				}
+			}
+
 		}
 	}
 
@@ -71,11 +92,22 @@ class RegistryCleaner {
 	def printListTags(Map<String, List<RegistryTagInfo>> tagsByApp){
 		Template tpl = new SimpleTemplateEngine().createTemplate(options.format)
 
+		iterateOnTagsByApp(tagsByApp){tag, tags->
+			println tpl.make(tag: tag, tags: tags)
+		}
+	}
+
+	/**
+	 * helper method to iterate over Map<String, List<RegistryTagInfo>> structure and call closure {@see doing} on each tag
+	 * @param tagsByApp
+	 * @param doing
+	 */
+	private static void iterateOnTagsByApp(Map<String, List<RegistryTagInfo>> tagsByApp, @ClosureParams(value = SimpleType, options=['info.hubbitus.RegistryTagInfo', 'java.util.List<info.hubbitus.RegistryTagInfo>>']) Closure doing){
 		tagsByApp.each {app, tags->
 			tags.sort{a, b->
 				a.keptBy?.keepTagOption?.tagRegexp <=> b.keptBy?.keepTagOption?.tagRegexp ?: b.keptBy.isForDelete() <=> a.keptBy.isForDelete()
 			}.each{tag->
-				println tpl.make(tag: tag, tags: tags)
+				doing(tag, tags)
 			}
 		}
 	}
@@ -124,7 +156,7 @@ class RegistryCleaner {
 	/**
 	 * Mark tags for deletion by setting for each appropriate keepByTop/keepByPeriod reason
 	 *
-	 * @return
+	 * @return Map<String, List<RegistryTagInfo>> where key is application name and value list of tags
 	 */
 	private Map<String, List<RegistryTagInfo>> prepareListOfTagsToClean(){
 		getTagsDetailsByApplications()?.each {app, List<RegistryTagInfo> tags ->
@@ -146,11 +178,6 @@ class RegistryCleaner {
 
 
 		KeepOption keepOption = options.getKeepOptionForApplication(application)
-//?        if (opt.always && "$application:$tagRegexp" ==~ opt.always) return new KeepDecision(decision: KeepDecision.Decision.KEEP_ALWAYS)
-		// 0: - leave all which marked as always kept
-//		tags.findAll{tag-> tag.name ==~ options.alwaysKeep}.each {
-//			it.keptBy.add(new KeepDecision(decision: KeepDecision.Decision.KEEP_ALWAYS))
-//		}
 
 		// 1: group by matching tagRegexp
 		def tagsByRegexps = tags.groupBy {RegistryTagInfo tag ->
@@ -162,7 +189,7 @@ class RegistryCleaner {
 		// 2: Process Top and Period limits
 		tagsByRegexps.each {KeepTagOption opt, List<RegistryTagInfo> ts->
 			if (opt.top) {
-				ts.sort(true){ 'time' == options.sort ? it.created : it.name }
+				ts.sort(true){a, b-> 'time' == options.sort ? b.created <=> a.created : a.name <=> b.name }
 				ts.take(opt.top).each {RegistryTagInfo tag->
 					tag.keptBy.keepByTop(opt)
 				}
@@ -190,7 +217,6 @@ class RegistryCleaner {
 	 * Introduce separate method for easy test results of keep
 	 */
 	static ZonedDateTime now(){
-//		ZonedDateTime.now(clock)
-		ZonedDateTime.parse('2018-03-02T23:24:25+03:00[Europe/Moscow]')
+		ZonedDateTime.now(clock)
 	}
 }
