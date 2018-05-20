@@ -1,27 +1,32 @@
+plugins {
+	id 'com.bmuschko.docker-remote-api' version '3.2.8'
+	id 'net.nemerosa.versioning' version '2.7-beta.1'
+}
+
 group 'hubbitus'
 version '0.1-SNAPSHOT'
 
-
 repositories {
 	mavenCentral()
+	jcenter()
 }
 
 apply plugin: 'java'
 apply plugin: 'groovy'
 
+
 dependencies {
 	compile 'org.codehaus.groovy:groovy-all:2.3.11'
-	testCompile group: 'junit', name: 'junit', version: '4.12'
 
-	compile 'org.codehaus.groovy.modules.http-builder:http-builder:+'
+	compile 'org.codehaus.groovy.modules.http-builder:http-builder:0.7.1+'
 
-	compile 'ch.qos.logback:logback-classic:+' // dual EPL v.1.0 and LGPL 2.1
-	compile 'ch.qos.logback:logback-access:+'  // SLF4J under MIT
-	compile 'org.slf4j:slf4j-api:1.7.12' //those are required to drop other versions from dependencies
+	// Logging
+	compile 'ch.qos.logback:logback-classic:1.2.3+' // dual EPL v.1.0 and LGPL 2.1
+	compile 'org.slf4j:slf4j-api:1.7+' //those are required to drop other versions from dependencies
 
-	compile 'com.beust:jcommander:+'
+	compile 'com.beust:jcommander:1.27+'
 
-	compile 'org.codehaus.gpars:gpars:+'
+	compile 'org.codehaus.gpars:gpars:1.2.1+'
 
 	compile 'info.hubbitus:Hubbitus-common:[1.2.1,)' // ProgressiveLogging
 
@@ -51,7 +56,83 @@ task fatJar(type: Jar) { // http://www.mkyong.com/gradle/gradle-create-a-jar-fil
 			'Implementation-Version': version,
 			'Main-Class': 'info.hubbitus.Application'
 	}
-	baseName = project.name + '-all'
+	baseName = project.name + '-fat'
 	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 	with jar
 }
+
+versioning{
+	dirtySuffix = null != System.env.DIRTY_SUFFIX ? System.env.DIRTY_SUFFIX : '-dirty'
+
+	full = { scmInfo ->
+		// Tag name, or @branch_name@. gitlab-ci use detached head (https://gitlab.com/gitlab-org/gitlab-ci/issues/13) - so var used in that case
+		(
+			scmInfo.tag ?:
+				(scmInfo.tag ?: (
+					ZonedDateTime.now().format(DateTimeFormatter.ofPattern('yyyyMMddHHmmss.')) +
+						'master' == scmInfo.branch ? '' : scmInfo.branch + '.' )
+							+ scmInfo.abbreviated
+				).toLowerCase().replaceAll(/[^a-z0-9-_\.]/, '_')
+		)
+	}
+
+	branchEnv = ['CI_BUILD_REF_NAME' /* Gitlab */, 'TRAVIS_BRANCH' /* Travis-CI */ ]
+}
+
+/******************************************* Docker *******************************************/
+apply plugin: 'com.bmuschko.docker-remote-api'
+docker{
+	url = 'unix:///var/run/docker.sock'
+
+	registryCredentials {
+		url = 'https://docker.io/v2'
+		username = 'hubbitus'
+		// Var should be provided from outer scope (f.e. from gitlab-ci).
+		// Locally you may run it like: DOCKER_REGISTRY_PASSWORD='cool-pass' ./gradlew pushImage --stacktrace
+		password = System.env.DOCKER_REGISTRY_PASSWORD
+	}
+}
+
+import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
+import com.bmuschko.gradle.docker.tasks.image.DockerTagImage
+import com.bmuschko.gradle.docker.tasks.image.Dockerfile
+import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
+
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+
+task createDockerfile(type: Dockerfile, dependsOn: fatJar) {
+	from 'openjdk:11-slim'
+
+	destFile = file "$buildDir/Dockerfile"
+	println "destFile=$destFile"
+	maintainer 'Pavel Alexeev "Pahan@Hubbitus.info"'
+	addFile fatJar.archivePath.path - buildDir, "/app/${fatJar.archivePath.name}"
+	entryPoint('java', '-jar', "/app/${fatJar.archivePath.name}")
+}
+
+task dockerBuildImage(type: DockerBuildImage, dependsOn: createDockerfile) {
+	inputDir = createDockerfile.destFile.parentFile
+	tag = "docker.io/hubbitus/${project.name}:${versioning.info.full}"
+//    noCache = true // For debug
+}
+
+task dockerTagLatest(type: DockerTagImage, dependsOn: dockerBuildImage) {
+	targetImageId { dockerBuildImage.getImageId() }
+	tag = 'latest'
+	repository = "docker.io/hubbitus/${project.name}"
+	force = true
+}
+
+task dockerPushLatestTag(type: DockerPushImage){
+	imageName = "docker.io/hubbitus/${project.name}:latest"
+}
+
+task dockerPushImage(type: DockerPushImage, dependsOn: dockerBuildImage){
+	if ('master' == versioning.info.branch) {
+		dependsOn dockerTagLatest
+		finalizedBy dockerPushLatestTag
+	}
+	imageName = "docker.io/hubbitus/${project.name}:${versioning.info.full}"
+}
+/******************************************* /Docker *******************************************/

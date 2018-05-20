@@ -1,5 +1,6 @@
 package info.hubbitus
 
+import com.beust.jcommander.ParameterException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.util.ISO8601DateFormat
@@ -10,6 +11,7 @@ import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import groovy.util.logging.Slf4j
 import groovyx.gpars.GParsPool
+import groovyx.net.http.HttpResponseException
 import info.hubbitus.cli.CliOptions
 import info.hubbitus.cli.JCommanderAutoWidth
 import info.hubbitus.cli.KeepOption
@@ -18,6 +20,8 @@ import info.hubbitus.cli.KeepOption.KeepTagOption
 import java.time.Clock
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
+
+import static org.apache.http.HttpStatus.SC_UNAUTHORIZED
 
 /**
  * @author Pavel Alexeev.
@@ -54,13 +58,21 @@ class RegistryCleaner {
 	 */
 	void clean() {
 		if (!options.help) {
-			Map<String, List<RegistryTagInfo>> tagsByApp = prepareListOfTagsToClean()
+			Map<String, List<RegistryTagInfo>> tagsByApp
+			try{
+				tagsByApp = prepareListOfTagsToClean()
+			}
+			catch(HttpResponseException authException){
+				if (SC_UNAUTHORIZED == authException.statusCode){
+					throw new ParameterException("Unsucessfull authentification on registry! Please check provided URL, login and password information")
+				}
+				throw authException
+			}
 
 			printListTags(tagsByApp)
 
-			log.info('Start actual deleting of tags as requested')
-
 			if (options.delete){
+				log.info('Start actual deleting of tags as requested')
 				iterateOnTagsByApp(tagsByApp){tag, tags->
 					if (tag.keptBy.isForDelete()){
 						if(options.interactive){
@@ -79,7 +91,6 @@ class RegistryCleaner {
 					}
 				}
 			}
-
 		}
 	}
 

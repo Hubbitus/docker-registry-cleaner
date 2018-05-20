@@ -51,14 +51,13 @@ class RegistryClient {
 	}
 
 	/**
-	 * RESTClient does not seams Thread safety. So create new instance on request
-	 * @return
+	 * RESTClient does not seams Thread safety. So use ThreadLocal instances
 	 */
-	private RESTClient getRESTClient(){
+	ThreadLocal<RESTClient> restClient = ThreadLocal.withInitial{
 		RESTClient restClient = new RESTClient(url, ContentType.JSON)
 		restClient.auth.basic(user, password)
 		return restClient
-	}
+	} as ThreadLocal<RESTClient>
 
 	/**
 	 * Return list of applications (catalog)
@@ -67,7 +66,7 @@ class RegistryClient {
 	 * @return
 	 */
 	List<String> getCatalog(){
-		return getRESTClient().get(path: '_catalog').responseData.repositories
+		return restClient.get().get(path: '_catalog').responseData.repositories
 	}
 
 	/**
@@ -78,7 +77,7 @@ class RegistryClient {
 	 */
 	List<String> getTags(String application){
 		try{
-			def resp = getRESTClient().get(path: "$application/tags/list")
+			def resp = restClient.get().get(path: "$application/tags/list")
 
 			return resp.responseData.tags
 		}
@@ -100,7 +99,7 @@ class RegistryClient {
 	 * @return https://docs.docker.com/registry/spec/manifest-v2-2/#image-manifest-field-descriptions
 	 */
 	RegistryTagInfo getTagInfo(String application, String tag, ApiSchemaVersion schemaVersion = ApiSchemaVersion.V1){
-		def resp = getRESTClient().get(
+		def resp = restClient.get().get(
 			path: "$application/manifests/$tag"
 			// Header required: https://stackoverflow.com/questions/37033055/how-can-i-use-the-docker-registry-api-v2-to-delete-an-image-from-a-private-regis/37040883#37040883
 			,headers: [Accept: schemaVersion.getAcceptHeader()]
@@ -145,7 +144,7 @@ class RegistryClient {
 	 */
 	def deleteTag(RegistryTagInfo tag){
 		RegistryTagInfo tagInfoV2 = getTagInfo(tag.application, tag.name, ApiSchemaVersion.V2)
-		getRESTClient().delete(path: "${tag.application}/manifests/${tagInfoV2.serviceRawInfo[ApiSchemaVersion.V2].responseBase.headergroup.getHeaders('Docker-Content-Digest')[0].getValue()}")
+		restClient.get().delete(path: "${tag.application}/manifests/${tagInfoV2.serviceRawInfo[ApiSchemaVersion.V2].responseBase.headergroup.getHeaders('Docker-Content-Digest')[0].getValue()}")
 		log.info("Tag [$tag] deleted!")
 	}
 }
