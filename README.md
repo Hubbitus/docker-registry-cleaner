@@ -114,3 +114,4 @@ Intended for automatic builds on docker hub. In that case `gradle` invoked from 
 In that variant image may be built by:
 
     docker build -t docker-registry-cleaner:some-tag .
+
