@@ -45,6 +45,7 @@ class RegistryCleaner {
 		options = new CliOptions()
 		JCommanderAutoWidth jCommander = new JCommanderAutoWidth(options, args)
 		if (options.help) {
+			jCommander.setProgramName('docker-registry-cleaner')
 			jCommander.usage()
 			return
 		}
@@ -64,7 +65,7 @@ class RegistryCleaner {
 			}
 			catch(HttpResponseException authException){
 				if (SC_UNAUTHORIZED == authException.statusCode){
-					throw new ParameterException("Unsucessfull authentification on registry! Please check provided URL, login and password information")
+					throw new ParameterException('Unsuccessful authentication on registry! Please check provided URL, login and password information')
 				}
 				throw authException
 			}

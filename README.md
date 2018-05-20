@@ -11,8 +11,7 @@ Instructions how to build manually see below.
 ## Direct commandline:
 ```
 $ java -jar docker-registry-cleaner-all-0.1-SNAPSHOT.jar --help
-Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true -Dsun.java2d.pmoffscreen=false -XX:+UseCompressedOops -XX:+DoEscapeAnalysis -XX:+AggressiveOpts -XX:+EliminateLocks -XX:+UseNUMA -XX:+TieredCompilation
-Usage: <main class> [options]
+Usage: docker-registry-cleaner [options]
   Options:
     -D, --debug               Debug mode - write JSON data for got tags into debug.json file
                               Default: false
