@@ -2,6 +2,9 @@
 
 Any feedback and comments welcome! Please use github issues for that.
 
+**Docker hub automated build: https://hub.docker.com/r/hubbitus/docker-registry-cleaner/**
+Instructions how to build manually see below.
+
 # Basic usage info
 
 ## Direct commandline:
