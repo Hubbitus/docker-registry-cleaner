@@ -66,15 +66,15 @@ Usage: docker-registry-cleaner [options]
 ## Docker (recommended)
 If you do not want develop, and just harry up to run ti, you may use docker:
 
-    docker run docker-registry-cleaner --usage
+    docker run hubbitus/docker-registry-cleaner --usage
 
 And real clean invocation:
 
-    docker run docker-registry-cleaner --registry-url 'https://docreg.taskdata.work/v2/' --login egais --keep='GLOBAL={ top: 5, period: 1w }' --password='coll-password' --delete
+    docker run hubbitus/docker-registry-cleaner --registry-url 'https://docreg.taskdata.work/v2/' --login egais --keep='GLOBAL={ top: 5, period: 1w }' --password='coll-password' --delete
 
 Instead of pass all arguments each time `docker-registry-cleaner` may read all arguments from file where such options placed by one on line. Look example file in [test.args](src/test/resources/test.args). In case of docker don't forget mount it inso container (`--passwordFile` too, if used):
 
-    docker run -v $(pwd)/run.args:/host/run.args docker-registry-cleaner @/run.args
+    docker run -v $(pwd)/run.args:/host/run.args hubbitus/docker-registry-cleaner @/run.args
 
 
 # Build
@@ -116,5 +116,5 @@ Intended for automatic builds on docker hub. In that case `gradle` invoked from 
 
 In that variant image may be built by:
 
-    docker build -t docker-registry-cleaner:some-tag .
+    docker build -t hubbitus/docker-registry-cleaner:some-tag .
 
