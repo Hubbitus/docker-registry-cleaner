@@ -10,30 +10,54 @@ $ java -jar docker-registry-cleaner-all-0.1-SNAPSHOT.jar --help
 Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true -Dsun.java2d.pmoffscreen=false -XX:+UseCompressedOops -XX:+DoEscapeAnalysis -XX:+AggressiveOpts -XX:+EliminateLocks -XX:+UseNUMA -XX:+TieredCompilation
 Usage: <main class> [options]
   Options:
-    -d, --delete
-      Delete old tags!
-    By default we do not delete anything. Just list applications and tags. Information about tag and its build time also provided. If there any --clean options present also mark tags which
-      supposed to be deleted.
-    For sort you may also use --sort option.
-      Default: false
-    -f, --format
-      Format of printing tag line. See SimpleTemplateEngine
-      Default: tag=[${sprintf("%-90s", "$application:$tagName")}]; time=[${tagData.time}]; deleteBy=[${tagData.deleteBy}]
-    --help
+    -D, --debug               Debug mode - write JSON data for got tags into debug.json file
+                              Default: false
+    -d, --delete              Delete old optionsByTag!
+                                By default we do not delete anything. Just list applications and optionsByTag. Information about tagRegexp and its build time also provided. If there
+                              any --clean options present also mark optionsByTag which supposed to be deleted.
+                                For sort you may also use --sort option.
+                              Default: false
+    -f, --format              Format of printing tagRegexp line. See SimpleTemplateEngine description and info.hubbitus.RegistryTagInfo class for available data
+                              Default: tag=[<% printf("%-" + (tag.application.length() + 1 + tags.max{ it.name.length()}.name.length()) + "s", "${tag.application}:${tag.name}")%>]; time=[${tag.created}]; isForDelete=[<%printf("%-5s", tag.keptBy.isForDelete())%>]; [${tag.keptBy}]
+        --help
+                              Default: false
+    -i, --interactive         Interactive mode. Ask for deletion each image. Details like data and why it is proposed for delete will be shown. Implies delete = true
+                              Default: false
+  *     --keep                As primary goal to delete some old images we just provide some opposite rules which must be kept.
+                                1) We process only applications, matches --only-applications pattern if it
+                              set.
+                                2) Firstly match "application" against `application` regexp
+                                3) Then `tag` name against `tag` regexp
+                                4) If `period` present and greater than 0 check it matches build time
+                              early then in `period` (which is by default number of seconds, but suffixes m, h, d, w also supported for minutes, hours, days and weeks)
+                                5) If `top` present and greater than 0,
+                              from above results exempt from deletion that amount of elements, according to sorting, provided in --sort
+                                6) If both `period` and `top` provided only tags *match both criteria*
+                              will be kept (boolean AND)!
+                                F.e.:
+                                        - Said by date matched 10 tags and you have top=5 - so only 5 will be kept - other deleted
+                                        - In configured date period was 10 tags and
+                              you set top=20 - only 10 will be kept - other deleted
 
-    --keep
-      Dynamic parameters go here
-      Syntax: --keepkey=value
-      Default: {}
-  * -l, --login
-      Docker registry login
-  * -p, --password
-      Docker registry password
-  * -u, --registry-url
-      URL to docker registry REST endpoint. Like https://docreg.taskdata.work/v2/
-    --sort
-      Sort method on tags list. Either "name" or "time" (build time of image, default)
-      Default: time
+                                All other will be deleted!
+
+                                Example of options (to provide in file, please quote properly in shell
+                              options):
+                                --keep=GLOBAL={ top: 5, period: 1w }
+                                --keep=egaisapp=[ { tag: ".+", top: 10, period: 3d }, { tag: "release_.+", top: 4 }, {tag: "auto.+", period: "4d"} ]
+                                --keep=bp-app=[ { tag:
+                              "^(dev|master)$", top: 2 }, { tag: "^dev-", top: 5 }, {tag: "^master-", period: "4d"} ]
+                                --keep=glrapp={ top: 4 }
+
+                              Syntax: --keepkey=value
+                              Default: {}
+  * -l, --login               Docker registry login
+    -o, --only-applications   Regexp to match against applications name to process. Tags for other even will not be fetched
+    -p, --password            Docker registry password
+    -P, --password-file       Docker registry password, stored in file for security.
+  * -u, --registry-url        URL to docker registry REST endpoint. Like https://docreg.taskdata.work/v2/
+        --sort                Sort method on optionsByTag list. Either "name" or "time" (build time of image, default). In case of time sorting most recent should be stay, so DESC assuming
+                              Default: time
 ```
 
 ## Docker (recommended)

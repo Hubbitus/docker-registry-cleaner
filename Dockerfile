@@ -6,7 +6,7 @@ FROM openjdk:8-jre-alpine as builder
 COPY . /build
 WORKDIR /build
 ENV GRADLE_USER_HOME=./.gradle
-RUN ./gradlew --no-daemon fatJar -S
+RUN ./gradlew --no-daemon fatJar -S && ./gradlew check --rerun-tasks
 RUN ls /build/build/libs/*
 
 # 2 stage. Final application
