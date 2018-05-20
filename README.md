@@ -1,4 +1,5 @@
 [![CI Build Status](https://travis-ci.org/Hubbitus/docker-registry-cleaner.svg?branch=master)](https://travis-ci.org/Hubbitus/docker-registry-cleaner)
+[![Docker Build Status](https://img.shields.io/docker/build/hubbitus/docker-registry-cleaner.svg)](https://hub.docker.com/r/hubbitus/docker-registry-cleaner/)
 
 Any feedback and comments welcome! Please use github issues for that.
 
