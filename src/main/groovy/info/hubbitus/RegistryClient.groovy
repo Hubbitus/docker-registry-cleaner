@@ -7,9 +7,12 @@ import groovyx.gpars.GParsPool
 import groovyx.net.http.ContentType
 import groovyx.net.http.HttpResponseException
 import groovyx.net.http.RESTClient
+import info.hubbitus.exceptions.TagNotFoundException
 import info.hubbitus.utils.bench.ProgressLogger
 
 import java.time.ZonedDateTime
+
+import static org.apache.http.HttpStatus.SC_NOT_FOUND
 
 /**
  * @author Pavel Alexeev.
@@ -99,13 +102,21 @@ class RegistryClient {
 	 * @return https://docs.docker.com/registry/spec/manifest-v2-2/#image-manifest-field-descriptions
 	 */
 	RegistryTagInfo getTagInfo(String application, String tag, ApiSchemaVersion schemaVersion = ApiSchemaVersion.V1){
-		def resp = restClient.get().get(
-			path: "$application/manifests/$tag"
-			// Header required: https://stackoverflow.com/questions/37033055/how-can-i-use-the-docker-registry-api-v2-to-delete-an-image-from-a-private-regis/37040883#37040883
-			,headers: [Accept: schemaVersion.getAcceptHeader()]
-		)
-
-		return new RegistryTagInfo(application, tag, schemaVersion, resp)
+		try{
+			def resp = restClient.get().get(
+				path: "$application/manifests/$tag"
+				// Header required: https://stackoverflow.com/questions/37033055/how-can-i-use-the-docker-registry-api-v2-to-delete-an-image-from-a-private-regis/37040883#37040883
+				,headers: [Accept: schemaVersion.getAcceptHeader()]
+			)
+			return new RegistryTagInfo(application, tag, schemaVersion, resp)
+		}
+		catch (HttpResponseException e){
+			if (SC_NOT_FOUND == e.statusCode){
+				log.warn("Tag [$tag] not found")
+				throw new TagNotFoundException("Tag [$tag] not found")
+			}
+			else throw e
+		}
 	}
 
 	/**
@@ -143,8 +154,13 @@ class RegistryClient {
 	 * @return
 	 */
 	def deleteTag(RegistryTagInfo tag){
-		RegistryTagInfo tagInfoV2 = getTagInfo(tag.application, tag.name, ApiSchemaVersion.V2)
-		restClient.get().delete(path: "${tag.application}/manifests/${tagInfoV2.serviceRawInfo[ApiSchemaVersion.V2].responseBase.headergroup.getHeaders('Docker-Content-Digest')[0].getValue()}")
-		log.info("Tag [$tag] deleted!")
+		try{
+			RegistryTagInfo tagInfoV2 = getTagInfo(tag.application, tag.name, ApiSchemaVersion.V2)
+			restClient.get().delete(path: "${tag.application}/manifests/${tagInfoV2.serviceRawInfo[ApiSchemaVersion.V2].responseBase.headergroup.getHeaders('Docker-Content-Digest')[0].getValue()}")
+			log.info("Tag [$tag] deleted!")
+		}
+		catch (TagNotFoundException e){
+			log.warn("Strange, but tag [$tag] not found on deletion! Skipping")
+		}
 	}
 }
