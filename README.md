@@ -112,7 +112,7 @@ Push also possible, but requires providing password:
 
 ### Traditional docker build
 
-Intended for automatic builds on docker hub. In that case `gradle` invoked from `Dockerfile`. To make target image smalle used [multi-stage technic](https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds) which require docker-ce version >= 17.
+Intended for automatic builds on docker hub. In that case `gradle` invoked from `Dockerfile`. To make target image small used [multi-stage technic](https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds) which require docker-ce version >= 17.
 
 In that variant image may be built by:
 
