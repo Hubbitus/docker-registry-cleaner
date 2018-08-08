@@ -1,6 +1,5 @@
 package info.hubbitus
 
-import groovy.json.JsonSlurper
 import groovy.transform.Memoized
 import groovy.util.logging.Slf4j
 import groovyx.gpars.GParsPool
@@ -9,8 +8,6 @@ import groovyx.net.http.HttpResponseException
 import groovyx.net.http.RESTClient
 import info.hubbitus.exceptions.TagNotFoundException
 import info.hubbitus.utils.bench.ProgressLogger
-
-import java.time.ZonedDateTime
 
 import static org.apache.http.HttpStatus.SC_NOT_FOUND
 
@@ -136,7 +133,7 @@ class RegistryClient {
 						getTagInfo(application, tag)
 					}
 					catch (Throwable t){
-						log.error("Exception happened on get tag info:", t)
+						log.error('Exception happened on get tag info:', t)
 						throw t;
 					}
 				}

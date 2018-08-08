@@ -92,8 +92,8 @@ class CliOptions {
 	@Parameter(names = ['-f', '--format'], description = 'Format of printing tagRegexp line. See SimpleTemplateEngine description and info.hubbitus.RegistryTagInfo class for available data', validateWith = SimpleTemplateEngineFormatValidator.class)
 	String format = 'tag=[<% printf("%-" + (tag.application.length() + 1 + tags.max{ it.name.length()}.name.length()) + "s", "${tag.application}:${tag.name}")%>]; time=[${tag.created}]; isForDelete=[<%printf("%-5s", tag.keptBy.isForDelete())%>]; [${tag.keptBy}]'
 
-	@Parameter(names = ['-d', '--delete'], description = '''Delete old optionsByTag!
-				By default we do not delete anything. Just list applications and optionsByTag. Information about tagRegexp and its build time also provided. If there any --clean options present also mark optionsByTag which supposed to be deleted.
+	@Parameter(names = ['-d', '--delete'], description = '''Really perform deletion!
+				By default we do not delete anything. Just list found tags per application. Information about tagRegexp and its build time also provided. If there any --keep options present also mark tags which supposed for deletion.
 				For sort you may also use --sort option.''')
 	boolean delete = false
 
