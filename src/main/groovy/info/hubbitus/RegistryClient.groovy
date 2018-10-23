@@ -9,6 +9,7 @@ import groovyx.net.http.RESTClient
 import info.hubbitus.exceptions.TagNotFoundException
 import info.hubbitus.utils.bench.ProgressLogger
 
+import static info.hubbitus.RegistryClient.ApiSchemaVersion.V2
 import static org.apache.http.HttpStatus.SC_NOT_FOUND
 
 /**
@@ -152,11 +153,11 @@ class RegistryClient {
 	 */
 	def deleteTag(RegistryTagInfo tag){
 		try{
-			RegistryTagInfo tagInfoV2 = getTagInfo(tag.application, tag.name, ApiSchemaVersion.V2)
-			restClient.get().delete(path: "${tag.application}/manifests/${tagInfoV2.serviceRawInfo[ApiSchemaVersion.V2].responseBase.headergroup.getHeaders('Docker-Content-Digest')[0].getValue()}")
+			RegistryTagInfo tagInfoV2 = getTagInfo(tag.application, tag.name, V2)
+			restClient.get().delete(path: "${tag.application}/manifests/${tagInfoV2.serviceRawInfo[V2].responseBase.headergroup.getHeaders('Docker-Content-Digest')[0].getValue()}")
 			log.info("Tag [$tag] deleted!")
 		}
-		catch (TagNotFoundException e){
+		catch (TagNotFoundException ignore){
 			log.warn("Strange, but tag [$tag] not found on deletion! Skipping")
 		}
 	}

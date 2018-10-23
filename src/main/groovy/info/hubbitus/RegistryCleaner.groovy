@@ -91,7 +91,20 @@ class RegistryCleaner {
 						}
 					}
 				}
+				executeAfterCommand()
 			}
+		}
+	}
+
+	/**
+	 * If configured we run command after deletion performed
+	 */
+	def executeAfterCommand(){
+		if (options.afterCommand){
+			log.info("Execute after command: [$options.afterCommand]")
+			Process process = options.afterCommand.execute()
+			process.waitForProcessOutput(System.out, System.err)
+			process.waitFor()
 		}
 	}
 

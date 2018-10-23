@@ -100,6 +100,11 @@ class CliOptions {
 	@Parameter(names = '--help', help = true)
 	boolean help
 
+	@Parameter(names = ['-a', '--after-command'], description = '''Command, which should be executed at end of work. Most probably you want run something like:
+				bash -c '/usr/bin/docker exec docker-registry registry garbage-collect /etc/docker/registry/config.yml && /usr/bin/docker restart docker-registry'
+				Warning! If you run cleaner from docker, don't forget mount /run/docker.sock or provide TCP access to the daemon!''', required = false)
+	String afterCommand
+
 	/**
 	 * Merges GLOBAL application options with particular one, if any present. And return 'Effective' one.
 	 *
