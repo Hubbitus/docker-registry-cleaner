@@ -1,11 +1,13 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Application" type="GroovyScriptRunConfiguration" factoryName="Groovy" singleton="false">
-    <module name="" />
+  <configuration default="false" name="Application" type="GroovyScriptRunConfiguration" factoryName="Groovy" singleton="true">
+    <module name="docker-registry-cleaner_main" />
     <setting name="path" value="file://$PROJECT_DIR$/src/main/groovy/info/hubbitus/Application.groovy" />
     <setting name="vmparams" value="" />
     <setting name="params" value="@test.args" />
     <setting name="workDir" value="file://$PROJECT_DIR$" />
     <setting name="debug" value="false" />
-    <method />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
   </configuration>
 </component>

@@ -5,6 +5,7 @@ import groovy.json.JsonSlurper
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 import info.hubbitus.decision.KeepDecision
+import org.apache.http.HttpResponse
 
 import java.time.ZonedDateTime
 
@@ -28,7 +29,7 @@ class RegistryTagInfo {
 	KeepDecision keptBy = new KeepDecision()
 
 	@JsonIgnore
-	Map<RegistryClient.ApiSchemaVersion,?> serviceRawInfo = [:]
+	Map<RegistryClient.ApiSchemaVersion,HttpResponse> serviceRawInfo = [:]
 
 	/**
 	 * Empty constructor required for JSON [de]serialization

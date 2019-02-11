@@ -74,23 +74,25 @@ class RegistryCleaner {
 
 			if (options.delete){
 				log.info('Start actual deleting of tags as requested')
+				int deleteCounter = 0
 				iterateOnTagsByApp(tagsByApp){tag, tags->
 					if (tag.keptBy.isForDelete()){
 						if(options.interactive){
 							println tpl.make(tag: tag, tags: tags)
 							println 'Delete above tag? Y/n'
 							if(System.in.newReader().readLine().trim().toLowerCase() in ['y', '']){
-								client.deleteTag(tag)
+								client.deleteTag(tag) && deleteCounter++
 							}
 							else {
 								log.debug('Skipping tag deletion by user choose')
 							}
 						}
 						else {
-							client.deleteTag(tag)
+							client.deleteTag(tag) && deleteCounter++
 						}
 					}
 				}
+				log.info("Deletion completed. Total tags $deleteCounter has been deleted")
 				executeAfterCommand()
 			}
 		}
