@@ -1,0 +1,6 @@
+
+sudo docker run \
+	-v /run/docker.sock:/run/docker.sock \
+	-v /usr/bin/docker:/usr/bin/docker \
+	-v $(pwd)/test.args:/test.args -v $(pwd)/.registry.pass:/.registry.pass \
+		hubbitus/docker-registry-cleaner:master.5f70d5d-dirty @/test.args
