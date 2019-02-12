@@ -8,7 +8,7 @@ Instructions how to build manually see below.
 
 # Basic usage info
 
-## Direct commandline:
+## Direct commandline run:
 ```
 $ java -jar docker-registry-cleaner-all-0.1-SNAPSHOT.jar --help
 Usage: docker-registry-cleaner [options]
@@ -63,7 +63,7 @@ Usage: docker-registry-cleaner [options]
                               Default: time
 ```
 
-## Docker (recommended)
+## Docker run (recommended)
 If you do not want develop, and just harry up to run ti, you may use docker:
 
     docker run hubbitus/docker-registry-cleaner --usage
@@ -76,6 +76,11 @@ Instead of pass all arguments each time `docker-registry-cleaner` may read all a
 
     docker run -v $(pwd)/run.args:/host/run.args hubbitus/docker-registry-cleaner @/run.args
 
+
+Example command present in file [docker.run](docker.run).
+
+### Systemd service and timer planned
+[See issue](https://github.com/Hubbitus/docker-registry-cleaner/issues/1) 
 
 # Build
 
@@ -112,7 +117,7 @@ Push also possible, but requires providing password:
 
 ### Traditional docker build
 
-Intended for automatic builds on docker hub. In that case `gradle` invoked from `Dockerfile`. To make target image small used [multi-stage technic](https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds) which require docker-ce version >= 17.
+Intended for automatic builds on docker hub. In that case `gradle` invoked from `Dockerfile`. To make target image small used [multi-stage build](https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds) which require docker-ce version >= 17.
 
 In that variant image may be built by:
 
